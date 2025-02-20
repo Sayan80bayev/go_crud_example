@@ -5,44 +5,34 @@ import (
 	"gorm.io/gorm"
 )
 
-// PostRepository — интерфейс работы с постами
 type PostRepository struct {
 	db *gorm.DB
 }
 
-// NewPostRepository — конструктор репозитория
 func NewPostRepository(db *gorm.DB) *PostRepository {
-	return &PostRepository{db: db}
+	return &PostRepository{db}
 }
 
-// Create добавляет новый пост
-func (r *PostRepository) Create(post *models.Post) error {
+func (r *PostRepository) CreatePost(post *models.Post) error {
 	return r.db.Create(post).Error
 }
 
-// GetAll возвращает все посты
-func (r *PostRepository) GetAll() ([]models.Post, error) {
+func (r *PostRepository) GetPosts() ([]models.Post, error) {
 	var posts []models.Post
-	err := r.db.Find(&posts).Error
+	err := r.db.Preload("User").Find(&posts).Error
 	return posts, err
 }
 
-// GetByID возвращает пост по ID
-func (r *PostRepository) GetByID(id uint) (*models.Post, error) {
+func (r *PostRepository) GetPostByID(id uint) (*models.Post, error) {
 	var post models.Post
-	err := r.db.First(&post, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &post, nil
+	err := r.db.Preload("User").First(&post, id).Error
+	return &post, err
 }
 
-// Update обновляет пост
-func (r *PostRepository) Update(post *models.Post) error {
+func (r *PostRepository) UpdatePost(post *models.Post) error {
 	return r.db.Save(post).Error
 }
 
-// Delete удаляет пост
-func (r *PostRepository) Delete(id uint) error {
+func (r *PostRepository) DeletePost(id uint) error {
 	return r.db.Delete(&models.Post{}, id).Error
 }

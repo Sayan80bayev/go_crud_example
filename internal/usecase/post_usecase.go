@@ -6,29 +6,26 @@ import (
 )
 
 type PostUsecase struct {
-	repo *repository.PostRepository
+	postRepo *repository.PostRepository
 }
 
-func NewPostUsecase(repo *repository.PostRepository) *PostUsecase {
-	return &PostUsecase{repo: repo}
+func NewPostUsecase(postRepo *repository.PostRepository) *PostUsecase {
+	return &PostUsecase{postRepo}
 }
 
-func (uc *PostUsecase) CreatePost(post *models.Post) error {
-	return uc.repo.Create(post)
+func (uc *PostUsecase) CreatePost(title, content string, userID uint) error {
+	post := &models.Post{
+		Title:   title,
+		Content: content,
+		UserID:  userID, // Указываем автора
+	}
+	return uc.postRepo.CreatePost(post)
 }
 
 func (uc *PostUsecase) GetPosts() ([]models.Post, error) {
-	return uc.repo.GetAll()
+	return uc.postRepo.GetPosts()
 }
 
 func (uc *PostUsecase) GetPostByID(id uint) (*models.Post, error) {
-	return uc.repo.GetByID(id)
-}
-
-func (uc *PostUsecase) UpdatePost(post *models.Post) error {
-	return uc.repo.Update(post)
-}
-
-func (uc *PostUsecase) DeletePost(id uint) error {
-	return uc.repo.Delete(id)
+	return uc.postRepo.GetPostByID(id)
 }

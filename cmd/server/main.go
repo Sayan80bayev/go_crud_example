@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go_crud_example/delivery"
 	"go_crud_example/internal/config"
 	"go_crud_example/internal/models"
 	"go_crud_example/internal/repository"
 	"go_crud_example/internal/usecase"
-	"log"
-
-	"github.com/gin-gonic/gin"
+	"go_crud_example/pkg/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 )
 
 func main() {
@@ -27,23 +27,34 @@ func main() {
 	}
 
 	// Миграция
-	db.AutoMigrate(&models.Post{})
+	db.AutoMigrate(&models.Post{}, &models.User{})
 
 	// Инициализация компонентов
 	postRepo := repository.NewPostRepository(db)
 	postUsecase := usecase.NewPostUsecase(postRepo)
 	postHandler := delivery.NewPostHandler(postUsecase)
 
+	userRepo := repository.NewUserRepository(db)
+	authUsecase := usecase.NewAuthUsecase(userRepo, cfg.JWTSecret)
+	authHandler := delivery.NewAuthHandler(authUsecase)
+
+	// Используем единый ключ для всех компонентов
+	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
+
 	// Создаём роутер
 	r := gin.Default()
-	r.POST("/posts", postHandler.CreatePost)
 	r.GET("/posts", postHandler.GetPosts)
 	r.GET("/posts/:id", postHandler.GetPostByID)
-	r.PUT("/posts/:id", postHandler.UpdatePost)
-	r.DELETE("/posts/:id", postHandler.DeletePost)
+
+	postRoutes := r.Group("/posts", authMiddleware)
+	{
+		postRoutes.POST("/", postHandler.CreatePost)
+	}
+
+	r.POST("/register", authHandler.Register)
+	r.POST("/auth", authHandler.Login)
 
 	// Запуск сервера
-	port := cfg.Port
-	fmt.Println("Сервер запущен на порту:", port)
-	r.Run(":" + port)
+	fmt.Println("Сервер запущен на порту:", cfg.Port)
+	r.Run(":" + cfg.Port)
 }

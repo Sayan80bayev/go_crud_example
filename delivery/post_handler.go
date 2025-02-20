@@ -1,64 +1,67 @@
 package delivery
 
 import (
-	"github.com/gin-gonic/gin"
-	"go_crud_example/internal/models"
 	"go_crud_example/internal/usecase"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type PostHandler struct {
-	usecase *usecase.PostUsecase
+	postUsecase *usecase.PostUsecase
 }
 
-func NewPostHandler(uc *usecase.PostUsecase) *PostHandler {
-	return &PostHandler{usecase: uc}
+func NewPostHandler(postUsecase *usecase.PostUsecase) *PostHandler {
+	return &PostHandler{postUsecase}
 }
 
+// Создание поста
 func (h *PostHandler) CreatePost(c *gin.Context) {
-	var post models.Post
-	if err := c.ShouldBindJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var req struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	h.usecase.CreatePost(&post)
-	c.JSON(http.StatusCreated, post)
+
+	// Получаем user_id из middleware
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := h.postUsecase.CreatePost(req.Title, req.Content, userID.(uint)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create post"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Post created successfully"})
 }
 
+// Получение списка постов
 func (h *PostHandler) GetPosts(c *gin.Context) {
-	posts, err := h.usecase.GetPosts()
+	posts, err := h.postUsecase.GetPosts()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch posts"})
 		return
 	}
+
 	c.JSON(http.StatusOK, posts)
 }
 
+// Получение одного поста
 func (h *PostHandler) GetPostByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	post, err := h.usecase.GetPostByID(uint(id))
+	post, err := h.postUsecase.GetPostByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Пост не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
-	c.JSON(http.StatusOK, post)
-}
 
-func (h *PostHandler) UpdatePost(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	var post models.Post
-	if err := c.ShouldBindJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	post.ID = uint(id)
-	h.usecase.UpdatePost(&post)
 	c.JSON(http.StatusOK, post)
-}
-
-func (h *PostHandler) DeletePost(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	h.usecase.DeletePost(uint(id))
-	c.JSON(http.StatusOK, gin.H{"message": "Пост удалён"})
 }
