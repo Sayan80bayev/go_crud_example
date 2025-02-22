@@ -1,7 +1,7 @@
 package delivery
 
 import (
-	"go_crud_example/internal/usecase"
+	"go_crud_example/internal/service"
 	"net/http"
 	"strconv"
 
@@ -9,10 +9,10 @@ import (
 )
 
 type PostHandler struct {
-	postUsecase *usecase.PostUsecase
+	postUsecase *service.PostService
 }
 
-func NewPostHandler(postUsecase *usecase.PostUsecase) *PostHandler {
+func NewPostHandler(postUsecase *service.PostService) *PostHandler {
 	return &PostHandler{postUsecase}
 }
 

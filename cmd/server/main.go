@@ -2,16 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"go_crud_example/delivery"
-	"go_crud_example/internal/config"
 	"go_crud_example/internal/models"
-	"go_crud_example/internal/repository"
-	"go_crud_example/internal/usecase"
-	"go_crud_example/pkg/middleware"
+	"log"
+
+	"github.com/gin-gonic/gin"
+	"go_crud_example/internal/config"
+	"go_crud_example/internal/routes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 )
 
 func main() {
@@ -23,36 +21,15 @@ func main() {
 	// Подключение к БД
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Ошибка подключения к базе:", err)
+		log.Fatal("Ошибка подключения к базе данных:", err)
 	}
 
-	// Миграция
-	db.AutoMigrate(&models.Post{}, &models.User{})
+	// Автоматическая миграция
+	db.AutoMigrate(&models.User{}, &models.Post{})
 
-	// Инициализация компонентов
-	postRepo := repository.NewPostRepository(db)
-	postUsecase := usecase.NewPostUsecase(postRepo)
-	postHandler := delivery.NewPostHandler(postUsecase)
-
-	userRepo := repository.NewUserRepository(db)
-	authUsecase := usecase.NewAuthUsecase(userRepo, cfg.JWTSecret)
-	authHandler := delivery.NewAuthHandler(authUsecase)
-
-	// Используем единый ключ для всех компонентов
-	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
-
-	// Создаём роутер
+	// Создаём роутер и передаём зависимости
 	r := gin.Default()
-	r.GET("/posts", postHandler.GetPosts)
-	r.GET("/posts/:id", postHandler.GetPostByID)
-
-	postRoutes := r.Group("/posts", authMiddleware)
-	{
-		postRoutes.POST("/", postHandler.CreatePost)
-	}
-
-	r.POST("/register", authHandler.Register)
-	r.POST("/auth", authHandler.Login)
+	routes.SetupRoutes(r, db, cfg)
 
 	// Запуск сервера
 	fmt.Println("Сервер запущен на порту:", cfg.Port)

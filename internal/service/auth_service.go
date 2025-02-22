@@ -1,4 +1,4 @@
-package usecase
+package service
 
 import (
 	"errors"
@@ -11,16 +11,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthUsecase struct {
+type AuthService struct {
 	userRepo *repository.UserRepository
 	jwtKey   []byte
 }
 
-func NewAuthUsecase(userRepo *repository.UserRepository, jwtKey string) *AuthUsecase {
-	return &AuthUsecase{userRepo, []byte(jwtKey)}
+func NewAuthService(userRepo *repository.UserRepository, jwtKey string) *AuthService {
+	return &AuthService{userRepo, []byte(jwtKey)}
 }
 
-func (uc *AuthUsecase) Register(username, password string) error {
+func (uc *AuthService) Register(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (uc *AuthUsecase) Register(username, password string) error {
 	return uc.userRepo.CreateUser(user)
 }
 
-func (uc *AuthUsecase) Login(username, password string) (string, error) {
+func (uc *AuthService) Login(username, password string) (string, error) {
 	user, err := uc.userRepo.GetUserByUsername(username)
 	if err != nil {
 		return "", errors.New("invalid credentials")

@@ -1,4 +1,4 @@
-package usecase
+package service
 
 import (
 	"go_crud_example/internal/models"
@@ -6,15 +6,15 @@ import (
 	"go_crud_example/internal/response"
 )
 
-type PostUsecase struct {
+type PostService struct {
 	postRepo *repository.PostRepository
 }
 
-func NewPostUsecase(postRepo *repository.PostRepository) *PostUsecase {
-	return &PostUsecase{postRepo}
+func NewPostService(postRepo *repository.PostRepository) *PostService {
+	return &PostService{postRepo}
 }
 
-func (uc *PostUsecase) CreatePost(title, content string, userID uint) error {
+func (uc *PostService) CreatePost(title, content string, userID uint) error {
 	post := &models.Post{
 		Title:   title,
 		Content: content,
@@ -23,7 +23,7 @@ func (uc *PostUsecase) CreatePost(title, content string, userID uint) error {
 	return uc.postRepo.CreatePost(post)
 }
 
-func (uc *PostUsecase) GetPosts() ([]response.PostResponse, error) {
+func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
 	posts, err := uc.postRepo.GetPosts()
 	if err != nil {
 		return nil, err
@@ -43,6 +43,6 @@ func (uc *PostUsecase) GetPosts() ([]response.PostResponse, error) {
 	return postResponses, nil
 }
 
-func (uc *PostUsecase) GetPostByID(id uint) (*models.Post, error) {
+func (uc *PostService) GetPostByID(id uint) (*models.Post, error) {
 	return uc.postRepo.GetPostByID(id)
 }

@@ -1,17 +1,17 @@
 package delivery
 
 import (
-	"go_crud_example/internal/usecase"
+	"go_crud_example/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	authUsecase *usecase.AuthUsecase
+	authUsecase *service.AuthService
 }
 
-func NewAuthHandler(authUsecase *usecase.AuthUsecase) *AuthHandler {
+func NewAuthHandler(authUsecase *service.AuthService) *AuthHandler {
 	return &AuthHandler{authUsecase}
 }
 
