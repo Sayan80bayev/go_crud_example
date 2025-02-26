@@ -45,18 +45,9 @@ func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
 }
 
 func (ps *PostService) UpdatePost(content string, title string, userId uint, postId uint) error {
-	post, err := ps.postRepo.GetPostByID(postId)
-	if err != nil {
-		return errors.New("post not found")
-	}
-	if post.User.ID != userId {
-		return errors.New("user not allowed")
-	}
-
-	isTitleEqual := title == post.Title
-	isContentEqual := content == post.Content
-	if isTitleEqual && isContentEqual {
-		return errors.New("nothing to update")
+	post, err2 := validateUpdate(content, title, userId, postId, ps)
+	if err2 != nil {
+		return err2
 	}
 
 	post.Content = content
@@ -79,4 +70,21 @@ func (ps *PostService) DeletePost(postId uint, userId uint) error {
 
 func (uc *PostService) GetPostByID(id uint) (*models.Post, error) {
 	return uc.postRepo.GetPostByID(id)
+}
+
+func validateUpdate(content string, title string, userId uint, postId uint, ps *PostService) (*models.Post, error) {
+	post, err := ps.postRepo.GetPostByID(postId)
+	if err != nil {
+		return nil, errors.New("post not found")
+	}
+	if post.User.ID != userId {
+		return nil, errors.New("user not allowed")
+	}
+
+	isTitleEqual := title == post.Title
+	isContentEqual := content == post.Content
+	if isTitleEqual && isContentEqual {
+		return nil, errors.New("nothing to update")
+	}
+	return post, nil
 }

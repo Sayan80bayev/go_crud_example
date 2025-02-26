@@ -20,18 +20,28 @@ func NewAuthService(userRepo *repository.UserRepository, jwtKey string) *AuthSer
 	return &AuthService{userRepo, []byte(jwtKey)}
 }
 
-func (uc *AuthService) Register(username, password string) error {
+func (uc *AuthService) Register(username, password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	user := &models.User{
 		Username: username,
 		Password: string(hashedPassword),
 	}
+	err = uc.userRepo.CreateUser(user)
+	if err != nil {
+		return "", err
+	}
 
-	return uc.userRepo.CreateUser(user)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":  user.ID,
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	return token.SignedString(uc.jwtKey)
 }
 
 func (uc *AuthService) Login(username, password string) (string, error) {
