@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"go_crud_example/internal/models"
 	"go_crud_example/internal/repository"
 	"go_crud_example/internal/response"
@@ -41,6 +42,39 @@ func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
 		})
 	}
 	return postResponses, nil
+}
+
+func (ps *PostService) UpdatePost(content string, title string, userId uint, postId uint) error {
+	post, err := ps.postRepo.GetPostByID(postId)
+	if err != nil {
+		return errors.New("post not found")
+	}
+	if post.User.ID != userId {
+		return errors.New("user not allowed")
+	}
+
+	isTitleEqual := title == post.Title
+	isContentEqual := content == post.Content
+	if isTitleEqual && isContentEqual {
+		return errors.New("nothing to update")
+	}
+
+	post.Content = content
+	post.Title = title
+
+	return ps.postRepo.UpdatePost(post)
+}
+
+func (ps *PostService) DeletePost(postId uint, userId uint) error {
+	post, err := ps.postRepo.GetPostByID(postId)
+	if err != nil {
+		return errors.New("post not found")
+	}
+	if post.User.ID != userId {
+		return errors.New("user not allowed")
+	}
+
+	return ps.postRepo.DeletePost(postId)
 }
 
 func (uc *PostService) GetPostByID(id uint) (*models.Post, error) {

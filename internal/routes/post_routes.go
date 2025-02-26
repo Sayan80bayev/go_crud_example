@@ -22,5 +22,7 @@ func SetupPostRoutes(r *gin.Engine, db *gorm.DB, authMiddleware gin.HandlerFunc)
 	postRoutes := r.Group("/posts", authMiddleware)
 	{
 		postRoutes.POST("/", postHandler.CreatePost)
+		postRoutes.PUT("/:id", postHandler.UpdatePost)
+		postRoutes.DELETE("/:id", postHandler.DeletePost)
 	}
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type PostHandler struct {
-	postUsecase *service.PostService
+	postService *service.PostService
 }
 
 func NewPostHandler(postUsecase *service.PostService) *PostHandler {
@@ -35,7 +35,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	if err := h.postUsecase.CreatePost(req.Title, req.Content, userID.(uint)); err != nil {
+	if err := h.postService.CreatePost(req.Title, req.Content, userID.(uint)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create post"})
 		return
 	}
@@ -45,7 +45,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 
 // Получение списка постов
 func (h *PostHandler) GetPosts(c *gin.Context) {
-	posts, err := h.postUsecase.GetPosts()
+	posts, err := h.postService.GetPosts()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch posts"})
 		return
@@ -57,11 +57,64 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 // Получение одного поста
 func (h *PostHandler) GetPostByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	post, err := h.postUsecase.GetPostByID(uint(id))
+	post, err := h.postService.GetPostByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, post)
+}
+
+func (h *PostHandler) UpdatePost(c *gin.Context) {
+	postID64, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+	postID := uint(postID64)
+
+	var req struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := h.postService.UpdatePost(req.Content, req.Title, userID.(uint), postID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update post" + ": " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post updated successfully"})
+}
+func (h *PostHandler) DeletePost(c *gin.Context) {
+	postID64, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	postID := uint(postID64)
+
+	if err := h.postService.DeletePost(postID, userID.(uint)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete post" + ": " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
 }
