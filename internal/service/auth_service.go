@@ -35,11 +35,7 @@ func (uc *AuthService) Register(username, password string) (string, error) {
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  user.ID,
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
-	})
+	token := generateJwtToken(user)
 
 	return token.SignedString(uc.jwtKey)
 }
@@ -54,11 +50,16 @@ func (uc *AuthService) Login(username, password string) (string, error) {
 		return "", errors.New("invalid credentials")
 	}
 
+	token := generateJwtToken(user)
+
+	return token.SignedString(uc.jwtKey)
+}
+
+func generateJwtToken(user *models.User) *jwt.Token {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":  user.ID,
 		"username": user.Username,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
-
-	return token.SignedString(uc.jwtKey)
+	return token
 }

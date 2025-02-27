@@ -26,7 +26,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err := h.authUsecase.Register(req.Username, req.Password); err != nil {
+	if _, err := h.authUsecase.Register(req.Username, req.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
 		return
 	}
