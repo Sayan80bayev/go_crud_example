@@ -15,11 +15,12 @@ func NewPostService(postRepo *repository.PostRepository) *PostService {
 	return &PostService{postRepo}
 }
 
-func (uc *PostService) CreatePost(title, content string, userID uint) error {
+func (uc *PostService) CreatePost(title, content string, userID uint, categoryID uint) error {
 	post := &models.Post{
-		Title:   title,
-		Content: content,
-		UserID:  userID, // Указываем автора
+		Title:      title,
+		Content:    content,
+		UserID:     userID, // Указываем автора
+		CategoryID: categoryID,
 	}
 	return uc.postRepo.CreatePost(post)
 }
@@ -38,6 +39,10 @@ func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
 			Author: response.UserResponse{
 				ID:       post.User.ID,
 				Username: post.User.Username,
+			},
+			Category: response.CategoryResponse{
+				Id:   post.Category.ID,
+				Name: post.Category.Name,
 			},
 		})
 	}

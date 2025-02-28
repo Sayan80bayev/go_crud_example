@@ -19,8 +19,9 @@ func NewPostHandler(postUsecase *service.PostService) *PostHandler {
 // Создание поста
 func (h *PostHandler) CreatePost(c *gin.Context) {
 	var req struct {
-		Title   string `json:"title"`
-		Content string `json:"content"`
+		Title      string `json:"title"`
+		Content    string `json:"content"`
+		CategoryID uint   `json:"category_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -35,7 +36,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	if err := h.postService.CreatePost(req.Title, req.Content, userID.(uint)); err != nil {
+	if err := h.postService.CreatePost(req.Title, req.Content, userID.(uint), req.CategoryID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create post"})
 		return
 	}

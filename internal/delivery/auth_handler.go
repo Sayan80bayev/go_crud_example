@@ -8,7 +8,7 @@ import (
 )
 
 type AuthHandler struct {
-	authUsecase *service.AuthService
+	authService *service.AuthService
 }
 
 func NewAuthHandler(authUsecase *service.AuthService) *AuthHandler {
@@ -26,7 +26,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if _, err := h.authUsecase.Register(req.Username, req.Password); err != nil {
+	if _, err := h.authService.Register(req.Username, req.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
 		return
 	}
@@ -45,7 +45,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authUsecase.Login(req.Username, req.Password)
+	token, err := h.authService.Login(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return

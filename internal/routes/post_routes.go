@@ -11,8 +11,8 @@ import (
 // SetupPostRoutes настраивает маршруты для работы с постами
 func SetupPostRoutes(r *gin.Engine, db *gorm.DB, authMiddleware gin.HandlerFunc) {
 	postRepo := repository.NewPostRepository(db)
-	postUsecase := service.NewPostService(postRepo)
-	postHandler := delivery.NewPostHandler(postUsecase)
+	postService := service.NewPostService(postRepo)
+	postHandler := delivery.NewPostHandler(postService)
 
 	// Открытые роуты
 	r.GET("/posts", postHandler.GetPosts)

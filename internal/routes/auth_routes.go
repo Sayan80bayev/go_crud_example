@@ -11,8 +11,8 @@ import (
 
 func SetupAuthRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	userRepo := repository.NewUserRepository(db)
-	authUsecase := service.NewAuthService(userRepo, cfg.JWTSecret)
-	authHandler := delivery.NewAuthHandler(authUsecase)
+	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
+	authHandler := delivery.NewAuthHandler(authService)
 
 	// Роуты для аутентификации
 	r.POST("/register", authHandler.Register)

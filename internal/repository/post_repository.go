@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"go_crud_example/internal/models"
 	"gorm.io/gorm"
 )
@@ -14,12 +15,16 @@ func NewPostRepository(db *gorm.DB) *PostRepository {
 }
 
 func (r *PostRepository) CreatePost(post *models.Post) error {
+	var category models.Category
+	if err := r.db.First(&category, post.CategoryID).Error; err != nil {
+		return fmt.Errorf("category with ID %d does not exist", post.CategoryID)
+	}
 	return r.db.Create(post).Error
 }
 
 func (r *PostRepository) GetPosts() ([]models.Post, error) {
 	var posts []models.Post
-	err := r.db.Preload("User").Find(&posts).Error
+	err := r.db.Preload("User").Preload("Category").Find(&posts).Error
 	return posts, err
 }
 
