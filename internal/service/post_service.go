@@ -2,31 +2,45 @@ package service
 
 import (
 	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
+	"go_crud_example/internal/config"
 	"go_crud_example/internal/models"
 	"go_crud_example/internal/repository"
 	"go_crud_example/internal/response"
+	"go_crud_example/pkg/s3"
 )
 
 type PostService struct {
 	postRepo *repository.PostRepository
+	minio    *minio.Client
 }
 
-func NewPostService(postRepo *repository.PostRepository) *PostService {
-	return &PostService{postRepo}
+func NewPostService(postRepo *repository.PostRepository, minioClient *minio.Client) *PostService {
+	return &PostService{postRepo, minioClient}
 }
 
-func (uc *PostService) CreatePost(title, content string, userID uint, categoryID uint) error {
+func (ps *PostService) CreatePost(c *gin.Context, title, content string, userID uint, categoryID uint, cfg *config.Config) error {
+	// Upload the image to MinIO
+	imageURL, err := s3.UploadFile(c, cfg, ps.minio)
+	if err != nil {
+		return err
+	}
+
+	// Create post with image URL
 	post := &models.Post{
 		Title:      title,
 		Content:    content,
-		UserID:     userID, // Указываем автора
+		UserID:     userID,
 		CategoryID: categoryID,
+		ImageURL:   imageURL, // Store image URL in DB
 	}
-	return uc.postRepo.CreatePost(post)
+
+	return ps.postRepo.CreatePost(post)
 }
 
-func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
-	posts, err := uc.postRepo.GetPosts()
+func (ps *PostService) GetPosts() ([]response.PostResponse, error) {
+	posts, err := ps.postRepo.GetPosts()
 	if err != nil {
 		return nil, err
 	}
@@ -44,19 +58,26 @@ func (uc *PostService) GetPosts() ([]response.PostResponse, error) {
 				Id:   post.Category.ID,
 				Name: post.Category.Name,
 			},
+			ImageURL: &post.ImageURL,
 		})
 	}
 	return postResponses, nil
 }
 
-func (ps *PostService) UpdatePost(content string, title string, userId uint, postId uint) error {
-	post, err2 := validateUpdate(content, title, userId, postId, ps)
+func (ps *PostService) UpdatePost(c *gin.Context, content string, title string, userId uint, postId uint, cfg *config.Config) error {
+	post, err2 := validateUpdate(userId, postId, ps)
 	if err2 != nil {
 		return err2
 	}
 
+	imageURL, err := s3.UploadFile(c, cfg, ps.minio)
+	if err != nil {
+		return err
+	}
+
 	post.Content = content
 	post.Title = title
+	post.ImageURL = imageURL
 
 	return ps.postRepo.UpdatePost(post)
 }
@@ -73,11 +94,11 @@ func (ps *PostService) DeletePost(postId uint, userId uint) error {
 	return ps.postRepo.DeletePost(postId)
 }
 
-func (uc *PostService) GetPostByID(id uint) (*models.Post, error) {
-	return uc.postRepo.GetPostByID(id)
+func (ps *PostService) GetPostByID(id uint) (*models.Post, error) {
+	return ps.postRepo.GetPostByID(id)
 }
 
-func validateUpdate(content string, title string, userId uint, postId uint, ps *PostService) (*models.Post, error) {
+func validateUpdate(userId uint, postId uint, ps *PostService) (*models.Post, error) {
 	post, err := ps.postRepo.GetPostByID(postId)
 	if err != nil {
 		return nil, errors.New("post not found")
@@ -86,10 +107,5 @@ func validateUpdate(content string, title string, userId uint, postId uint, ps *
 		return nil, errors.New("user not allowed")
 	}
 
-	isTitleEqual := title == post.Title
-	isContentEqual := content == post.Content
-	if isTitleEqual && isContentEqual {
-		return nil, errors.New("nothing to update")
-	}
 	return post, nil
 }

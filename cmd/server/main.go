@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"go_crud_example/internal/models"
 	"log"
 
@@ -24,7 +23,6 @@ func main() {
 		log.Fatal("Ошибка подключения к базе данных:", err)
 	}
 
-	// Автоматическая миграция
 	db.AutoMigrate(&models.User{}, &models.Post{})
 
 	// Создаём роутер и передаём зависимости
@@ -32,6 +30,5 @@ func main() {
 	routes.SetupRoutes(r, db, cfg)
 
 	// Запуск сервера
-	fmt.Println("Сервер запущен на порту:", cfg.Port)
 	r.Run(":" + cfg.Port)
 }

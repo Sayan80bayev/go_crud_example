@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"go_crud_example/internal/config"
 	"go_crud_example/internal/service"
 	"net/http"
 	"strconv"
@@ -10,21 +11,23 @@ import (
 
 type PostHandler struct {
 	postService *service.PostService
+	cfg         *config.Config
 }
 
-func NewPostHandler(postUsecase *service.PostService) *PostHandler {
-	return &PostHandler{postUsecase}
+func NewPostHandler(postUsecase *service.PostService, cfg *config.Config) *PostHandler {
+	return &PostHandler{postUsecase, cfg}
 }
 
 // Создание поста
 func (h *PostHandler) CreatePost(c *gin.Context) {
 	var req struct {
-		Title      string `json:"title"`
-		Content    string `json:"content"`
-		CategoryID uint   `json:"category_id"`
+		Title      string `form:"title" binding:"required"`
+		Content    string `form:"content" binding:"required"`
+		CategoryID uint   `form:"category_id" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// Bind form data instead of JSON
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
@@ -36,7 +39,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	if err := h.postService.CreatePost(req.Title, req.Content, userID.(uint), req.CategoryID); err != nil {
+	if err := h.postService.CreatePost(c, req.Title, req.Content, userID.(uint), req.CategoryID, h.cfg); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create post"})
 		return
 	}
@@ -91,13 +94,14 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	if err := h.postService.UpdatePost(req.Content, req.Title, userID.(uint), postID); err != nil {
+	if err := h.postService.UpdatePost(c, req.Content, req.Title, userID.(uint), postID, h.cfg); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update post" + ": " + err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Post updated successfully"})
 }
+
 func (h *PostHandler) DeletePost(c *gin.Context) {
 	postID64, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {

@@ -8,4 +8,5 @@ type Post struct {
 	Category   Category `gorm:"foreignKey:CategoryID"` // Связь с категорией
 	UserID     uint     `json:"user_id"`               // ID автора поста
 	User       User     `gorm:"foreignKey:UserID"`     // Связь с автором
+	ImageURL   string   `json:"image_url"`
 }

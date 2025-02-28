@@ -5,4 +5,5 @@ type PostResponse struct {
 	Title    string           `json:"title"`
 	Author   UserResponse     `json:"author"`
 	Category CategoryResponse `json:"category"`
+	ImageURL *string          `json:"image_url,omitempty"`
 }

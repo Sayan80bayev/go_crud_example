@@ -14,6 +14,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 	// Подключаем отдельные роутеры
 	SetupAuthRoutes(r, db, cfg)
-	SetupPostRoutes(r, db, authMiddleware)
+	SetupPostRoutes(r, db, authMiddleware, cfg)
 	SetupCategoryRoutes(r, db, authMiddleware)
 }
