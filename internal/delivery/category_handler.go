@@ -21,15 +21,19 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
 	}
 	_, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+
 	if err := ch.CategoryService.CreateCategory(req.Name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"data": req.Name})
 }
 
