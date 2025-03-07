@@ -9,4 +9,5 @@ type Post struct {
 	UserID     uint     `json:"user_id"`               // ID автора поста
 	User       User     `gorm:"foreignKey:UserID"`     // Связь с автором
 	ImageURL   string   `json:"image_url"`
+	LikeCount  int64    `json:"like_count" gorm:"default:0"`
 }
