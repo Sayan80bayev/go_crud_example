@@ -27,7 +27,10 @@ func main() {
 		log.Fatal("Ошибка подключения к базе данных:", err)
 	}
 
-	db.AutoMigrate(&models.User{}, &models.Post{})
+	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Like{})
+	if err != nil {
+		log.Fatal("Ошибка миграции в базе данных:", err)
+	}
 
 	// Подключение к Redis
 	redisClient := redis.NewClient(&redis.Options{

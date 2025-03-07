@@ -18,4 +18,5 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, client *redis.Client, producer *kaf
 	SetupAuthRoutes(r, db, cfg)
 	SetupPostRoutes(r, db, authMiddleware, cfg)
 	SetupCategoryRoutes(r, db, authMiddleware)
+	SetupLikeRoutes(r, db, authMiddleware, client, producer)
 }
