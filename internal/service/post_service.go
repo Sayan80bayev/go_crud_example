@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"go_crud_example/internal/mappers"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,7 +51,6 @@ func (ps *PostService) CreatePost(c *gin.Context, title, content string, userID 
 		return err
 	}
 
-	// 🟢 Удаляем старый кэш и отправляем событие в Redis
 	ps.redis.Publish(context.Background(), "posts:updates", "update")
 
 	return nil
@@ -96,7 +97,11 @@ func (ps *PostService) UpdatePost(c *gin.Context, content string, title string, 
 		return err
 	}
 
-	ps.redis.Publish(context.Background(), "posts:updates", "update")
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("post:%d", postId)
+	// Remove the outdated cache
+	ps.redis.Del(ctx, cacheKey)
+	ps.redis.Publish(ctx, "posts:updates", "update")
 	return nil
 }
 
@@ -114,12 +119,37 @@ func (ps *PostService) DeletePost(postId uint, userId uint) error {
 		return err
 	}
 
-	ps.redis.Publish(context.Background(), "posts:updates", "update")
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("post:%d", postId)
+	log.Println("Delete post:", postId)
+	ps.redis.Del(ctx, cacheKey)
+	ps.redis.Publish(ctx, "posts:updates", "update")
 	return nil
 }
 
 func (ps *PostService) GetPostByID(id uint) (*models.Post, error) {
-	return ps.postRepo.GetPostByID(id)
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("post:%d", id)
+
+	// Try to get the post from Redis cache
+	cachedPost, err := ps.redis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var post models.Post
+		json.Unmarshal([]byte(cachedPost), &post)
+		return &post, nil
+	}
+
+	// Fetch from DB if not cached
+	post, err := ps.postRepo.GetPostByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in Redis with a TTL of 10 minutes
+	jsonData, _ := json.Marshal(post)
+	ps.redis.Set(ctx, cacheKey, jsonData, 10*time.Minute)
+
+	return post, nil
 }
 
 func validateUpdate(userId uint, postId uint, ps *PostService) (*models.Post, error) {
