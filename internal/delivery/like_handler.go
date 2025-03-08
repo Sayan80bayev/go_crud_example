@@ -8,10 +8,10 @@ import (
 )
 
 type LikeHandler struct {
-	LikeService service.LikeService
+	LikeService *service.LikeService
 }
 
-func NewLikeHandler(likeService service.LikeService) *LikeHandler {
+func NewLikeHandler(likeService *service.LikeService) *LikeHandler {
 	return &LikeHandler{likeService}
 }
 
