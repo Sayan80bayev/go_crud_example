@@ -16,7 +16,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, client *redis.Client, producer *kaf
 
 	// Подключаем отдельные роутеры
 	SetupAuthRoutes(r, db, cfg)
-	SetupPostRoutes(r, db, authMiddleware, cfg)
+	SetupPostRoutes(r, db, authMiddleware, client, producer, cfg)
 	SetupCategoryRoutes(r, db, authMiddleware)
 	SetupLikeRoutes(r, db, authMiddleware, client, producer)
 }
